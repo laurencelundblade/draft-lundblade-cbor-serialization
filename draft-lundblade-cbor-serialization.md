@@ -29,8 +29,8 @@ normative:
 
 --- abstract
 
-CBOR allows variable serialization to accommodate varying use cases in constrained environments, but leaves it without a default interoperable serialization.
-Here a base interoperability serialization is defined that should usable for a majority of CBOR based protocols.
+This document updates and clarifies CBOR Serialization and Deterministic Encoding from  {{-cbor}}.
+It minimizes changes to terminology and definitions and adds background information.
 
 --- middle
 
@@ -91,28 +91,17 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
 
 ## Encoder Requirements {#PreferredEncoding}
 
-1. Shortest-form encoding of the argument MUST be used for all major
-   types.
-   Major type 7 is used for floating-point and simple values; floating
-   point values have its specific rules for how the shortest form is
-   derived for the argument.
-   The shortest form encoding for any argument that is not a floating
-   point value is:
+1. Shortest-form encoding of the argument MUST be used for all major types.
+   The shortest form encoding for any argument that is not a floating  point value is:
 
-   * 0 to 23 and -1 to -24 MUST be encoded in the same byte as the
-     major type.
-   * 24 to 255 and -25 to -256 MUST be encoded only with an additional
-     byte (ai = 0x18).
-   * 256 to 65535 and -257 to -65536 MUST be encoded only with an
-     additional two bytes (ai = 0x19).
-   * 65536 to 4294967295 and -65537 to -4294967296 MUST be encoded
-     only with an additional four bytes (ai = 0x1a).
+   * 0 to 23 and -1 to -24 MUST be encoded in the same byte as the major type.
+   * 24 to 255 and -25 to -256 MUST be encoded only with an additional byte (ai = 0x18).
+   * 256 to 65535 and -257 to -65536 MUST be encoded only with an additional two bytes (ai = 0x19).
+   * 65536 to 4294967295 and -65537 to -4294967296 MUST be encoded only with an additional four bytes (ai = 0x1a).
 
-1. If maps or arrays are emitted, they MUST use definite-length
-   encoding (never indefinite-length).
+1. If maps or arrays are emitted, they MUST use definite-length encoding (never indefinite-length).
 
-1. If text or byte strings are emitted, they MUST use definite-length
-   encoding (never indefinite-length).
+1. If text or byte strings are emitted, they MUST use definite-length encoding (never indefinite-length).
 
 1. If floating-point numbers are emitted, the following apply:
 
@@ -147,9 +136,6 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
 
    * Leading zeros MUST not be present in the byte string content of tag 2 and 3.
 
-1. If big floats or decimal fractions with a big number mantissa are supported, the
-   big number serialization must conform to the above requirements for big numbers.
-
 
 ## Decoder Requirements {#PreferredDecoding}
 
@@ -175,13 +161,9 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
    be accepted in place of a byte string big number. Leading zeros in a big number
    byte string must be ignored.
 
-1. If big floats or decimal fractions with a big number mantissa are supported,
-   type 0 and type 1 integers must be accepted for the big number mantissa.
-
-
 ## When to use Preferred Serialization
 
-It is recommended that preferred serialization be used unless an application has special needs.
+It is recommended that Preferred Serialization be used unless an application has special needs.
 
 It is usually implementations in constrained environments that have special needs.
 For example, indefinite-length encoding is useful to send a lot of data from a device that has insufficient memory to store the data to be sent.
@@ -208,11 +190,28 @@ That is, deterministic encoding imposes no requirements over and above the requi
 
 ## When to use Deterministic Serialization
 
+Most applications do not require deterministic encoding—even those that use signing or hashing to authenticate or protect the integrity of data.
+For example, the payload of a COSE_Sign message does not need to be encoded deterministically, because it is transmitted along with the message.
+The recipient receives the exact same bytes that were signed.
+
+Deterministic encoding becomes important when the data being protected is NOT transmitted in the form needed for authenticity or integrity checks—typically when that form is derived from other data.
+This can happen for reasons such as data size, privacy concerns, or other constraints.
+
+The only difference between preferred and non-deterministic serialization is map key sorting.
+Sorting can be prohibitively expensive in very constrained environments.
+However, in many systems, sorting maps is not costly, and deterministic encoding can be used by default.
+Deterministically encoded data is always decodable, even by receivers that do not specifically support deterministic encoding.
+It can also be helpful for debugging protocols.
+
+
 # Deterministic Encoding for Popular Tags {#Tags}
+
+The definitions of the following tags in {{-cddl}} allow variation in the data mode, thus it is useful to define a deterministic encoding for them should a particular deterministic protocol need one.
+The tags defined in {{-cddl}} but not mentioned here have no variability in their data model.
 
 ## Date Strings, Tag 0
 
-TODO
+TODO -- complete this work and remove this comment before publication
 
 ## Epoch Date, Tag 1
 
@@ -224,6 +223,11 @@ In these cases, the floating-point form MUST be used instead.
 ### Decoder Requirements
 The decoder MUST decode both the integer and floating-point form.
 
+## Big Numbers, Tags 2 and 3
+
+The requirements for these are part of {{PreferredSerialization}}.
+Note that this is an oddity for backwards compatibility and better support for 128-bit integers.
+Normally all deterministic requirements for tags are at the data model level and thus not part of {{PreferredSerialization}}.
 
 ## Big Floats and Decimal Fractions, Tags 4 and 5
 
@@ -238,6 +242,10 @@ Both the integer and big number forms of the mantissa MUST be decoded.
 
 # General Protocol Considerations for Determinism
 
+This is the section that covers what is know as ALDR in some discussions.
+
+[^rfced] Please remove above sentence before publication
+
 In addition to {{CDER}} and {{Tags}}, there are considerations in the design of any deterministic protocol.
 
 For a protocol to be deterministic, both the encoding and data model (application) layer must be deterministic.
@@ -245,7 +253,7 @@ While CDER ensures determinism at the encoding layer, requirements at the applic
 
 Here’s an example application layer specification:
 
-At the sender’s convenience, the birth date MAY be sent either as an integer epoch date or string date. The receiver MUST decode both formats.
+>> At the sender’s convenience, the birth date MAY be sent either as an integer epoch date or string date. The receiver MUST decode both formats.
 
 While this specification is interoperable, it lacks determinism.
 There is variability in the data model layer akin to variability in the CBOR encoding layer when CDER is not required.
@@ -255,7 +263,7 @@ To make this example application layer specification deterministic, specify one 
 A more interesting source of application layer variability comes from CBOR’s variety of number types. For instance, the number 2 can be represented as an integer, float, big number, decimal fraction and other.
 Most protocols designs will just specify one number type to use, and that will give determinism, but here’s an example specification that doesn’t:
 
-At the sender’s convenience, the fluid level measurement MAY be encoded as an integer or a floating-point number. This allows for minimal encoding size while supporting a large range. The receiver MUST be able to accept both integers and floating-point numbers for the measurement.
+>> At the sender’s convenience, the fluid level measurement MAY be encoded as an integer or a floating-point number. This allows for minimal encoding size while supporting a large range. The receiver MUST be able to accept both integers and floating-point numbers for the measurement.
 
 Again, this ensures interoperability but not determinism—identical fluid level measurements can be represented in more than one way.
 Determinism can be achieved by allowing only floating-point, though that doesn’t minimize encoding size.
@@ -269,11 +277,10 @@ Although this is not strictly a CBOR issue, deterministic CBOR protocol designer
 
 While this is not an exhaustive list of application-layer considerations for deterministic CBOR protocols, it highlights the nature of variability in the data model layer and some sources of variability in the CBOR data model (i.e., in the application layer).
 
-(This is the section on ALDR)
 
 # CDDL Support
 
-TODO
+TODO -- complete work and remove this comment
 
 # Security Considerations
 
@@ -281,8 +288,14 @@ The security considerations in {{Section 10 of -cbor}} apply.
 
 # IANA Considerations
 
+TODO -- complete work and remove this comment before publication
+
 
 --- back
 
 # Examples and Test Vectors
 
+TODO -- complete work and remove this comment before publication
+
+
+[^rfced]: RFC Editor:
