@@ -29,8 +29,8 @@ normative:
 
 --- abstract
 
-This document updates and clarifies CBOR Serialization and Deterministic Encoding from  {{-cbor}}.
-It minimizes changes to terminology and definitions and adds background information.
+This document updates and clarifies CBOR Serialization and Deterministic Encoding as defined in {{-cbor}}.
+It also provides background explanations that were not included in the original specification.
 
 --- middle
 
@@ -39,8 +39,8 @@ It minimizes changes to terminology and definitions and adds background informat
 This document provides a complete definition of both Preferred Serialization and CBOR Deterministic Encoding Requirements (CDER) such that the reader does not need to refer to their definitions in {{-cbor}}.
 
 The overwhelming purpose of this document is clarity and ease for the CBOR ecosystem on the subject of serialization and determinism.
-Aside from one small change, the restatement of the requirements here doesn’t change anything in {{-cbor}}.
-The restatement is for the sake of clarity.
+Aside from one small change, this restatement of the requirements doesn’t change anything in {{-cbor}}.
+No new concepts or terminology is introduced.
 
 The small change is to Preferred Serialization.
 The conditional “preference” for deterministic length encoding in {{Section 4.1 of -cbor}} is promoted to an unconditional requirement by this document.
@@ -51,7 +51,7 @@ It is better to make this minor change than to create a third serialization conc
 
 # Information Model, Data Model and Serialization
 
-For a good understanding of this document, it is helpful to understand the difference between an information model, a data model and serialization.
+To understand CBOR serialization and determinism, it's helpful to distinguish between the general concepts of an information model, a data model, and serialization.
 
  |  | Information Model | Data Model | Serialization |
  | Abstraction Level | Top level; conceptual | Realization of information in data structures and data types | Actual bytes encoded for transmission |
@@ -63,10 +63,10 @@ CBOR doesn't provide facilities for information models.
 They are mentioned here for completeness and to provide some context.
 
 CBOR defines a palette of basic types that are the usual integers, floating-point numbers, strings, arrays, maps and other.
-Extended types may be constructing from these basic types.
+Extended types may be constructed from these basic types.
 These basic and extended types are used to construct the data model of a CBOR protocol.
-While not required, the data model of a protocol is often described using {{-cddl}}.
-The types in the data model are serialized per RFC 8949 to create encoded CBOR.
+While not required, {{-cddl}} may be used to describe the data model of a protocol.
+The types in the data model are serialized per {{-cbor}} to create encoded CBOR.
 
 CBOR allows certain data types to be serialized in multiple ways to facilitate easier implementation in constrained environments.
 For example, indefinite-length encoding enables strings, arrays, and maps to be streamed without knowing their length upfront.
@@ -105,28 +105,17 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
 
 1. If floating-point numbers are emitted, the following apply:
 
-   * The length of the argument indicates half (binary16, ai = 0x19),
-     single (binary32, ai = 0x1a) and double (binary64, ai = 0x1b)
-     precision encoding.
-     If multiple of these encodings preserve the precision of the
-     value to be encoded, only the shortest form of these MUST be
-     emitted.
-     That is, encoders MUST support half-precision and
-     single-precision floating point.
-     Positive and negative infinity and zero MUST be represented in
-     half-precision floating point.
+   * The length of the argument indicates half (binary16, ai = 0x19), single (binary32, ai = 0x1a) and double (binary64, ai = 0x1b) precision encoding.
+     If multiple of these encodings preserve the precision of the value to be encoded, only the shortest form of these MUST be emitted.
+     That is, encoders MUST support half-precision and single-precision floating point.
+     Positive and negative infinity and zero MUST be represented in half-precision floating point.
 
    * NaNs, and thus NaN payloads MUST be supported.
 
-     As with all floating point numbers, NaNs with payloads MUST be
-     reduced to the shortest of double, single or half precision that
-     preserves the NaN payload.
-     The reduction is performed by removing the rightmost N bits of the
-     payload, where N is the difference in the number of bits in the
-     significand (mantissa) between the original format and the
+     As with all floating point numbers, NaNs with payloads MUST be reduced to the shortest of double, single or half precision that preserves the NaN payload.
+     The reduction is performed by removing the rightmost N bits of the payload, where N is the difference in the number of bits in the significand (mantissa) between the original format and the
      reduced format.
-     The reduction is performed only (preserves the value only) if all the
-     rightmost bits removed are zero.
+     The reduction is performed only (preserves the value only) if all the rightmost bits removed are zero.
 
 1. If big numbers (tags 2 and 3) are supported, the following apply:
 
@@ -136,6 +125,8 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
 
    * Leading zeros MUST not be present in the byte string content of tag 2 and 3.
 
+   * See also {{BigNumPreferred}}.
+
 
 ## Decoder Requirements {#PreferredDecoding}
 
@@ -143,23 +134,17 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
 
 1. If arrays or maps are supported, definite-length arrays or maps MUST be accepted.
 
-1. If text or byte strings are supported, definite-length text or byte
-   strings MUST be accepted.
+1. If text or byte strings are supported, definite-length text or byte strings MUST be accepted.
 
 1. If floating-point numbers are supported, the following apply:
 
    * Half-precision values MUST be accepted.
-   * Double- and single-precision values SHOULD be accepted; leaving these out
-     is only foreseen for decoders that need to work in exceptionally
-     constrained environments.
-   * If double-precision values are accepted, single-precision values
-     MUST be accepted.
+   * Double- and single-precision values SHOULD be accepted; leaving these out is only foreseen for decoders that need to work in exceptionally constrained environments.
+   * If double-precision values are accepted, single-precision values MUST be accepted.
 
    * NaNs, and thus NaN payloads, MUST be accepted.
 
-1. If big numbers (tags 2 and 3) are supported, type 0 and type 1 integers MUST
-   be accepted in place of a byte string big number. Leading zeros in a big number
-   byte string must be ignored.
+1. If big numbers (tags 2 and 3) are supported, type 0 and type 1 integers MUST be accepted in place of a byte string big number. Leading zeros in a big number byte string must be ignored.
 
 ## When to use Preferred Serialization
 
@@ -225,9 +210,8 @@ The decoder MUST decode both the integer and floating-point form.
 
 ## Big Numbers, Tags 2 and 3
 
-The requirements for these are part of {{PreferredSerialization}}.
-Note that this is an oddity for backwards compatibility and better support for 128-bit integers.
-Normally all deterministic requirements for tags are at the data model level and thus not part of {{PreferredSerialization}}.
+The determinism requirements for big numbers are part of the big number requirements that are part of {{PreferredSerialization}}.
+That is, the Preferred Serialization of big numbers is deterministic. See also {{BigNumPreferred}}.
 
 ## Big Floats and Decimal Fractions, Tags 4 and 5
 
@@ -248,7 +232,7 @@ This is the section that covers what is know as ALDR in some discussions.
 
 In addition to {{CDER}} and {{Tags}}, there are considerations in the design of any deterministic protocol.
 
-For a protocol to be deterministic, both the encoding and data model (application) layer must be deterministic.
+For a protocol to be deterministic, both the encoding (serialization) and data model (application) layer must be deterministic.
 While CDER ensures determinism at the encoding layer, requirements at the application layer may also be necessary.
 
 Here’s an example application layer specification:
@@ -296,6 +280,20 @@ TODO -- complete work and remove this comment before publication
 # Examples and Test Vectors
 
 TODO -- complete work and remove this comment before publication
+
+
+# Explanation for Big Number Preferred Serialization {#BigNumPreferred}
+
+All requirements defined for Preferred Serialization address the intentional variability in CBOR serialization designed to support constrained environments—with one exception: the handling of big numbers.
+
+Specifically, all Preferred Serialization rules apply strictly to serialization concerns and not to the data model, except for the requirement regarding integers that can be encoded using major types 0 or 1.
+
+The rule that such integers MUST be encoded using major type 0 or 1, rather than as bignums (tags 2 or 3), represents a constraint at the data model level.
+It does not serve to limit variability in serialization format and is therefore conceptually distinct from other Preferred Serialization requirements.
+
+This exception is included in Preferred Serialization to promote a consistent and widely supported representation of 128-bit integers.
+While such integers are desirable for many applications, they exceed the range supported by the base CBOR data model, which is limited to 64-bit integers.
+Incorporating this constraint within Preferred Serialization enables consistent encoding practices for extended integer ranges without modifying the core CBOR data model.
 
 
 [^rfced]: RFC Editor:
