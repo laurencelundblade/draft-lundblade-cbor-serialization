@@ -49,7 +49,7 @@ Since the publication of {{-cbor}}, a period of five years, the CBOR community l
 It is better to make this minor change than to create a third serialization concept that would compound the complexity and confusion in this part of the CBOR ecosystem.
 
 
-# Information Model, Data Model and Serialization
+# Information Model, Data Model and Serialization {#models}
 
 To understand CBOR serialization and determinism, it's helpful to distinguish between the general concepts of an information model, a data model, and serialization.
 
@@ -117,15 +117,7 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
      reduced format.
      The reduction is performed only (preserves the value only) if all the rightmost bits removed are zero.
 
-1. If big numbers (tags 2 and 3) are supported, the following apply:
-
-   * Positive values from 0 to 2^63 - 1 MUST be encoded as a type 0 integer.
-
-   * Negative values from -1 to -(2^64) MUST be encoded as a type 1 integer.
-
-   * Leading zeros MUST not be present in the byte string content of tag 2 and 3.
-
-   * See also {{BigNumPreferred}}.
+1. If big numbers (tags 2 and 3) are supported, the Preferred Serialization requirements decribed in {{bignum}} MUST be implemented.
 
 
 ## Decoder Requirements {#PreferredDecoding}
@@ -144,7 +136,8 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
 
    * NaNs, and thus NaN payloads, MUST be accepted.
 
-1. If big numbers (tags 2 and 3) are supported, type 0 and type 1 integers MUST be accepted in place of a byte string big number. Leading zeros in a big number byte string must be ignored.
+1. If big numbers (tags 2 and 3) are supported, the Preferred Serialization requirements decribed in {{bignum}} MUST be implemented.
+
 
 ## When to use Preferred Serialization
 
@@ -189,6 +182,74 @@ Deterministically encoded data is always decodable, even by receivers that do no
 It can also be helpful for debugging protocols.
 
 
+# Clarified Big Number Requirements {#bignum}
+
+This text replaces {{Section 3.4.3 of -cbor}}
+
+Tag numbers 2 and 3 define “bignums” to encode arbitrary precision integers.
+
+The content of a bignum tag MUST be a byte string, interpreted as an unsigned integer n in network byte order (big-endian).
+
+* For tag 2 (positive bignum), the value is n.
+* For tag 3 (negative bignum), the value is -1 - n.
+
+All decoders MUST accept and ignore leading zeros in the byte string of a bignum.
+They MUST ALSO accept an empty byte string and treat it as the value zero.
+
+There are Preferred and non-Preferred Serializations for big numbers.
+The Preferred Serialization of big numbers is also deterministic, so there are no additional requirements for deterministic encoding of big numbers.
+
+In Preferred Serialization, the bignum number space is unified with CBOR major types 0 and 1.
+This means that any value that can be represented using major type 0 (unsigned integers) or 1 (negative integers) MUST NOT be encoded as a bignum.
+For example, the value 1 must be encoded as 0x01, not as the bignum 0xc24101.
+
+Additionally, bignums in Preferred Serialization MUST NOT be encoded with leading zeros.
+
+In Nonpreferred Serialization, there is no unification.
+Values that could otherwise be encoded using major types 0 or 1 may be encoded as bignums instead.
+For example, the value 1 may be encoded as 0xc24101.
+
+Implementations in environments that support 128-bit integers SHOULD implement tags 2 and 3 to encode and decode them.
+Additionally, if Preferred Serialization is implemented, it SHOULD include implementation of Preferred Serialization for tags 2 and 3.
+
+## Background Discussion on Preferred Serialization of Big Numbers
+
+The Preferred Serialization requirement for big numbers is unusual.
+The next two sections explain why it is unusual.
+The third section explains why this choice was made.
+
+This explanation is provided to help readers keep clarity on the distinction between serialization and data models, given the unusual use of Preferred Serialization for big numbers.
+
+### Preferred Serialization Background
+
+As mentioned in {{models}}, variation in serialization has been intentionally designed into CBOR to accommodate implementation in constrained environments.
+All the Preferred Serialization and CDER requirements, except for those related to big numbers, are to neutralize this variation for environments that don't need it.
+These requirements provide interoperability and determinism for the CBOR major types and do nothing else.
+For example, the Preferred Serialiation requirement for the shortest form of the argument removes the variability in argument encoding that is sometimes made use of in constrained requirements.
+
+### Data Model Background
+
+{{models}} distinguishes serialization from data models.
+The CBOR major types and tags exist in and are separated in the CBOR data model.
+The serialization of a particular type or tag is orthogonal to is major type and how it manifests at the data model level.
+For example, a floating-poing number is the same floating-point number at the data model level no matter how it is serialized.
+
+Specifically, major types 0 and 1, are conceptually separate from tags 2 and 3 in data model.
+The unification of of the these is thusn conceptually something that is happening at the data model level.
+
+### Why Unification is Part of Preferred Serialization
+
+Another view can be taken.
+There is exact equivalence of all the big number values with major types 0 and 1 for the entire range of values for major types 0 and 1.
+From that view, there are two possible serialization for that range of values.
+Selecting one versus the other can be viewed as a serialization preference while at the same time it is unification of distinct types at the data model level.
+
+Another reason is that this is what {{-cbor}} specified and this document seeks maximal compatibility with it.
+
+A third is to promote uniform common encoding of 128-bit integers.
+Including it in Preferred Serialization encourages implementation.
+
+
 # Deterministic Encoding for Popular Tags {#Tags}
 
 The definitions of the following tags in {{-cddl}} allow variation in the data mode, thus it is useful to define a deterministic encoding for them should a particular deterministic protocol need one.
@@ -210,8 +271,7 @@ The decoder MUST decode both the integer and floating-point form.
 
 ## Big Numbers, Tags 2 and 3
 
-The determinism requirements for big numbers are part of the big number requirements that are part of {{PreferredSerialization}}.
-That is, the Preferred Serialization of big numbers is deterministic. See also {{BigNumPreferred}}.
+See {{bignum}}.
 
 ## Big Floats and Decimal Fractions, Tags 4 and 5
 
@@ -282,18 +342,6 @@ TODO -- complete work and remove this comment before publication
 TODO -- complete work and remove this comment before publication
 
 
-# Explanation for Big Number Preferred Serialization {#BigNumPreferred}
-
-All requirements defined for Preferred Serialization address the intentional variability in CBOR serialization designed to support constrained environments—with one exception: the handling of big numbers.
-
-Specifically, all Preferred Serialization rules apply strictly to serialization concerns and not to the data model, except for the requirement regarding integers that can be encoded using major types 0 or 1.
-
-The rule that such integers MUST be encoded using major type 0 or 1, rather than as bignums (tags 2 or 3), represents a constraint at the data model level.
-It does not serve to limit variability in serialization format and is therefore conceptually distinct from other Preferred Serialization requirements.
-
-This exception is included in Preferred Serialization to promote a consistent and widely supported representation of 128-bit integers.
-While such integers are desirable for many applications, they exceed the range supported by the base CBOR data model, which is limited to 64-bit integers.
-Incorporating this constraint within Preferred Serialization enables consistent encoding practices for extended integer ranges without modifying the core CBOR data model.
 
 
 [^rfced]: RFC Editor:
