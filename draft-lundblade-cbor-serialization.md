@@ -184,70 +184,79 @@ It can also be helpful for debugging protocols.
 
 # Clarified Big Number Requirements {#bignum}
 
+## Big Number Requirements
+
 This text replaces {{Section 3.4.3 of -cbor}}
 
-Tag numbers 2 and 3 define “bignums” to encode arbitrary precision integers.
+Tag numbers 2 and 3 are used to represent bignums, which encode arbitrary-precision integers.
 
 The content of a bignum tag MUST be a byte string, interpreted as an unsigned integer n in network byte order (big-endian).
 
 * For tag 2 (positive bignum), the value is n.
 * For tag 3 (negative bignum), the value is -1 - n.
 
-All decoders MUST accept and ignore leading zeros in the byte string of a bignum.
-They MUST ALSO accept an empty byte string and treat it as the value zero.
+Decoders MUST accept and ignore leading zeros in the byte string of a bignum.
+Decoders MUST also accept an empty byte string and treat it as representing the value zero.
 
-There are Preferred and non-Preferred Serializations for big numbers.
-The Preferred Serialization of big numbers is also deterministic, so there are no additional requirements for deterministic encoding of big numbers.
+CBOR defines both Preferred and Non-Preferred Serializations for bignums.
+The Preferred Serialization of bignums is also deterministic; therefore, no additional requirements are needed for deterministic encoding beyond those of Preferred Serialization.
+
+### Preferred Serialization
 
 In Preferred Serialization, the bignum number space is unified with CBOR major types 0 and 1.
 This means that any value that can be represented using major type 0 (unsigned integers) or 1 (negative integers) MUST NOT be encoded as a bignum.
-For example, the value 1 must be encoded as 0x01, not as the bignum 0xc24101.
+
+For example, the value 1 MUST be encoded as the single-byte 0x01, and MUST NOT be encoded as a bignum (e.g., 0xc24101).
 
 Additionally, bignums in Preferred Serialization MUST NOT be encoded with leading zeros.
 
-In Nonpreferred Serialization, there is no unification.
-Values that could otherwise be encoded using major types 0 or 1 may be encoded as bignums instead.
-For example, the value 1 may be encoded as 0xc24101.
+### Non-Preferred Serialization
 
-Implementations in environments that support 128-bit integers SHOULD implement tags 2 and 3 to encode and decode them.
-Additionally, if Preferred Serialization is implemented, it SHOULD include implementation of Preferred Serialization for tags 2 and 3.
+In Non-Preferred Serialization, the unification of the bignum number space with major types 0 and 1 does not apply.
+Values that can be represented using major types 0 or 1 MAY instead be encoded as bignums.
+
+For example, the value 1 MAY be encoded as 0xc24101.
+
+### Implementation Guidance
+
+Implementations operating in environments that support 128-bit integers SHOULD implement tags 2 and 3 to encode and decode those values.
 
 ## Background Discussion on Preferred Serialization of Big Numbers
 
-The Preferred Serialization requirement for big numbers is unusual.
-The next two sections explain why it is unusual.
-The third section explains why this choice was made.
-
-This explanation is provided to help readers keep clarity on the distinction between serialization and data models, given the unusual use of Preferred Serialization for big numbers.
+The requirement for Preferred Serialization of big numbers is atypical.
+The following subsections explain why this is the case and why this design choice was made.
+This background is intended to help clarify the distinction between serialization and data models, as the inclusion of this particular requirement in Preferred Serialization blurs that line.
 
 ### Preferred Serialization Background
 
-As mentioned in {{models}}, variation in serialization has been intentionally designed into CBOR to accommodate implementation in constrained environments.
-All the Preferred Serialization and CDER requirements, except for those related to big numbers, are to neutralize this variation for environments that don't need it.
-These requirements provide interoperability and determinism for the CBOR major types and do nothing else.
-For example, the Preferred Serialiation requirement for the shortest form of the argument removes the variability in argument encoding that is sometimes made use of in constrained requirements.
+As mentioned in {{models}}, CBOR was intentionally designed to allow variation in serialization so support  implementation in constrained environments.
+All requirements associated with Preferred Serialization and the CBOR Deterministic Encoding Rules (CDER) &mdash; except those concerning big numbers &mdash; exist to eliminate this variation in deployments that do not require it.
+These requirements provide interoperability and determinism for the CBOR major types and don't affect anything at the data model level.
+
+For example, the Preferred Serialization requirement to use the shortest form of an argument eliminates variability in how arguments are encoded &mdash; variability that is sometimes intentionally made use of in constrained environments.
 
 ### Data Model Background
 
 {{models}} distinguishes serialization from data models.
-The CBOR major types and tags exist in and are separated in the CBOR data model.
-The serialization of a particular type or tag is orthogonal to is major type and how it manifests at the data model level.
-For example, a floating-poing number is the same floating-point number at the data model level no matter how it is serialized.
+In the CBOR data model, the major types (such as types 0 and 1 for integers) and tags (such as tags 2 and 3 for bignums) are distinct constructs.
+The way a particular value is serialized is separate from how it manifests in the data model level.
 
-Specifically, major types 0 and 1, are conceptually separate from tags 2 and 3 in data model.
-The unification of of the these is thusn conceptually something that is happening at the data model level.
+For instance, a floating-point number remains the same at the data model level regardless of whether it is serialized as a half-, single-, or double-precision float.
+The encoding is orthogonal to its meaning in the data model.
 
-### Why Unification is Part of Preferred Serialization
+Similarly, major types 0 and 1 are conceptually separate from tags 2 and 3.
+Unifying these two representations &mdash; by requiring values encodable with major types 0 or 1 to be encoded that way instead of using tags 2 or 3 &mdash; amounts to a unification at the data model level.
+As such, this requirement is unlike other Preferred Serialization constraints, which are focused solely on serialization variability.
 
-Another view can be taken.
-There is exact equivalence of all the big number values with major types 0 and 1 for the entire range of values for major types 0 and 1.
-From that view, there are two possible serialization for that range of values.
-Selecting one versus the other can be viewed as a serialization preference while at the same time it is unification of distinct types at the data model level.
+### Rationale for Including Unification in Preferred Serialization
+
+An alternate interpretation is that, since every value representable as a bignum within the range of major types 0 and 1 has an exact equivalent encoding using those major types, this is merely a matter of serialization choice.
+From this perspective, selecting one encoding form over the other could be seen as a serialization preference &mdash; even though it also implies unifying distinct data model types.
 
 Another reason is that this is what {{-cbor}} specified and this document seeks maximal compatibility with it.
 
-A third is to promote uniform common encoding of 128-bit integers.
-Including it in Preferred Serialization encourages implementation.
+Finally, including the unification rule in Preferred Serialization promotes consistent encoding of 128-bit integers.
+By incorporating this requirement, the specification encourages broader adoption and implementation of uniform 128-bit integer representations within CBOR.
 
 
 # Deterministic Encoding for Popular Tags {#Tags}
