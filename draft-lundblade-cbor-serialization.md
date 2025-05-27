@@ -186,7 +186,7 @@ It can also be helpful for debugging protocols.
 
 ## Big Number Requirements
 
-This text replaces {{Section 3.4.3 of -cbor}}
+This text replaces {{Section 3.4.3 of -cbor}}.
 
 Tag numbers 2 and 3 are used to represent bignums, which encode arbitrary-precision integers.
 
@@ -229,7 +229,7 @@ This background is intended to help clarify the distinction between serializatio
 
 ### Preferred Serialization Background
 
-As mentioned in {{models}}, CBOR was intentionally designed to allow variation in serialization so support  implementation in constrained environments.
+As mentioned in {{models}}, CBOR was intentionally designed to allow variation in serialization to support implementation in constrained environments.
 All requirements associated with Preferred Serialization and the CBOR Deterministic Encoding Rules (CDER) &mdash; except those concerning big numbers &mdash; exist to eliminate this variation in deployments that do not require it.
 These requirements provide interoperability and determinism for the CBOR major types and don't affect anything at the data model level.
 
@@ -238,7 +238,7 @@ For example, the Preferred Serialization requirement to use the shortest form of
 ### Data Model Background
 
 {{models}} distinguishes serialization from data models.
-In the CBOR data model, the major types (such as types 0 and 1 for integers) and tags (such as tags 2 and 3 for bignums) are distinct constructs.
+In CBOR data models, the major types (such as types 0 and 1 for integers) and tags (such as tags 2 and 3 for bignums) are distinct constructs.
 The way a particular value is serialized is separate from how it manifests in the data model level.
 
 For instance, a floating-point number remains the same at the data model level regardless of whether it is serialized as a half-, single-, or double-precision float.
