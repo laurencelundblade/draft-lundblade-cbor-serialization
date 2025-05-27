@@ -86,6 +86,9 @@ The requirements in the next two sections replace the definition of Preferred Se
 
 They are restated in normative form to be more clear and so they can be formally referenced by the restatement of {{CDER}}.
 
+To claim support for Preferred Serialization, everything output by an encoder MUST meet all these requirements.
+In particular this disallows using tag 2 and 3 for values in the range of -(2<sup>64</sup>) to 2<sup>64</sup> - 1.
+
 As mentioned in {{Introduction}} there is one change relative to the definition of Preferred Serialization in {{-cbor}}.
 
 
@@ -161,6 +164,8 @@ There are no differences between these requirements and those of {{-cbor}}.
 This restatement is only for the sake of clarity.
 ({{-cbor}} allowed indefinite-length encoding for preferred serialization but not for CDER; that is why there is a change to preferred serialization in this document but not to CDER).
 
+To claim support for CDER, everything output by an encoder MUST meet all these requirements.
+In particular this disallows using tag 2 and 3 for values in the range of -(2<sup>64</sup>) to 2<sup>64</sup> - 1.
 
 ## Encoder Requirements
 
