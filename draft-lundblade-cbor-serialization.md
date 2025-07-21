@@ -26,6 +26,16 @@ normative:
 
   RFC8610: cddl
 
+  IEEE754:
+    target: https://ieeexplore.ieee.org/document/8766229
+    title: IEEE Standard for Floating-Point Arithmetic
+    author:
+    - org: IEEE
+    date: false
+    seriesinfo:
+      IEEE Std: 754-2019
+      DOI: 10.1109/IEEESTD.2019.8766229
+
 
 --- abstract
 
@@ -355,45 +365,46 @@ TODO -- complete work and remove this comment before publication
 
 # Use of NaN in CBOR {#NaN}
 
-A NaN (Not a Number) is a special value defined by IEEE 754 for floating-point numbers.
-In floating-point computations, it signfies an error, such as division by zero.
+A NaN (Not a Number) is a special value defined by {{IEEE754}} for floating-point numbers.
+In floating-point computations, it indicates an error, such as division by zero.
 In CBOR, however, NaN can be used intentionally in protocols to represent out-of-band or exceptional conditions.
 
-For example, consider a protocol where a floating-point value represents a sensor's fluid level.
+For example, consider a protocol where a floating-point value represents a sensors fluid level.
 If the value is unavailable &mdash; perhaps because the sensor failed &mdash; NaN might be used to indicate this exceptional condition.
 
 Although NaN is valid in CBOR, in most cases, the CBOR simple value null is a better choice for representing missing or exceptional values.
 
 Reasons include:
 
-- JSON compatibility: JSON does not support NaN; it uses null for this purpose.
-- Wider availability: Not all programming environments support NaNs.
-- Data type flexibility: null can be used with any CBOR data type (e.g., integers, strings), not just floats.
+- Not all programming environments support NaNs.
+- JSON does not support NaN; it uses "null" for this purpose.
+- null can be used with any CBOR data type (e.g., integers, strings), not just floats.
 
 In CDDL (Concise Data Definition Language), this might be expressed as:
 
-    fluid-level = float / null
+~~~~CDDL
+fluid-level = float / null
+~~~~
 
-NaN Payloads
+A NaN  can have a “payload”.
+These are some extra bits (10 for half-precision, 23 for single and 52 for double) for an error detail or such.
+CBOR also supports these.
+There use is even less recommended than NaN because they are even less supported than NaN, both in CBOR libraries and in programming environments.
 
-NaN values can carry a payload, which consists of extra bits &mdash; 10 for half-precision, 23 for single-precision, and 52 for double-precision.
-These bits can encode additional information such as error details.
-CBOR supports these payloads, but their use is strongly discouraged because:
+An example use of a NaN payload might be an error code indicating why a value is not available.
+In CDDL, an alternate to a NaN payload is as follows.
+The item type int distinguishes the valid value from the error code.
 
-They are even less widely supported than NaN itself.
-Many CBOR libraries and programming environments do not preserve or expose the payload.
-For instance, a NaN payload might encode an error code indicating why a sensor reading is unavailable.
-A more portable and readable alternative in CBOR is to use a union of types to separate the valid value from the error code:
+~~~~CDDL
+error-code = int
+fluid-level = float / error-code
+~~~~
 
-    error-code = int
-    fluid-level = float / error-code
+While NaN and NaN payloads are supported in CBOR, they are not recommended for new designs due to limited interoperability and poor support in programming environments.
+The null value is safer and more compatible.
 
-While NaN and NaN payloads are supported in CBOR, they are not recommended for most new designs due to limited interoperability and poor support in common programming environments.
-The null value is generally a safer and more compatible alternative.
-
-That said, CBOR does provide full support for NaN and its payloads &mdash; something most other serialization formats do not.
-Their use remains appropriate in legacy systems or in applications where NaN is already in use.
-
+That said, CBOR does support NaN and its payloads &mdash; something most other serialization formats do not.
+When a legacy system needs them, they are available.
 
 # Examples and Test Vectors
 
