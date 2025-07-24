@@ -403,8 +403,9 @@ fluid-level = float / error-code
 While NaN and NaN payloads are supported in CBOR, they are not recommended for new designs due to limited interoperability and poor support in programming environments.
 The null value is safer and more compatible.
 
-That said, CBOR does support NaN and its payloads &mdash; something most other serialization formats do not.
-When a legacy system needs them, they are available.
+On the other hand, one might use CBOR to split and distribute an existing system that uses NaN internally, for example one that does "NaN boxing".
+CBOR is one of the few serialization formats that can do this.
+
 
 # Examples and Test Vectors
 
