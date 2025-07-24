@@ -26,6 +26,16 @@ normative:
 
   RFC8610: cddl
 
+  IEEE754:
+    target: https://ieeexplore.ieee.org/document/8766229
+    title: IEEE Standard for Floating-Point Arithmetic
+    author:
+    - org: IEEE
+    date: false
+    seriesinfo:
+      IEEE Std: 754-2019
+      DOI: 10.1109/IEEESTD.2019.8766229
+
 
 --- abstract
 
@@ -119,6 +129,8 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
      The reduction is performed by removing the rightmost N bits of the payload, where N is the difference in the number of bits in the significand (mantissa) between the original format and the
      reduced format.
      The reduction is performed only (preserves the value only) if all the rightmost bits removed are zero.
+
+     See also {{NaN}}.
 
 1. If big numbers (tags 2 and 3) are supported, the Preferred Serialization requirements decribed in {{bignum}} MUST be implemented.
 
@@ -350,6 +362,50 @@ TODO -- complete work and remove this comment before publication
 
 
 --- back
+
+# Use of NaN in CBOR {#NaN}
+
+A NaN (Not a Number) is a special value defined by {{IEEE754}} for floating-point numbers.
+In floating-point computations, it indicates an error, such as division by zero.
+In CBOR, however, NaN can be used intentionally in protocols to represent out-of-band or exceptional conditions.
+
+For example, consider a protocol where a floating-point value represents a sensor's fluid level.
+If the value is unavailable &mdash; perhaps because the sensor failed &mdash; NaN might be used to indicate this exceptional condition.
+
+Although NaN is valid in CBOR, in most cases, the CBOR simple value null is a better choice for representing missing or exceptional values.
+
+Reasons include:
+
+- Not all programming environments support NaNs.
+- JSON does not support NaN; it uses "null" for this purpose.
+- null can be used with any CBOR data type (e.g., integers, strings), not just floats.
+
+In CDDL (Concise Data Definition Language), this might be expressed as:
+
+~~~~CDDL
+fluid-level = float / null
+~~~~
+
+A NaN  can have a “payload”.
+These are some extra bits (10 for half-precision, 23 for single and 52 for double) for an error detail or such.
+CBOR also supports these.
+Their use is even less recommended than NaN because they are even less supported than NaN, both in CBOR libraries and in programming environments.
+
+An example use of a NaN payload might be an error code indicating why a value is not available.
+In CDDL, an alternate to a NaN payload is as follows.
+The item type int distinguishes the valid value from the error code.
+
+~~~~CDDL
+error-code = int
+fluid-level = float / error-code
+~~~~
+
+While NaN and NaN payloads are supported in CBOR, they are not recommended for new designs due to limited interoperability and poor support in programming environments.
+The null value is safer and more compatible.
+
+On the other hand, one might use CBOR to split and distribute an existing system that uses NaN internally, for example one that does "NaN boxing".
+CBOR is one of the few serialization formats that can do this.
+
 
 # Examples and Test Vectors
 
