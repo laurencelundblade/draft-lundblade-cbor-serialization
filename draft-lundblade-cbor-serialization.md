@@ -113,12 +113,13 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
      That is, encoders MUST support half-precision and single-precision floating point.
      Positive and negative infinity and zero MUST be represented in half-precision floating point.
 
-   * NaNs, and thus NaN payloads MUST be supported.
+   * NaN (Not a Number), including NaN payloads, MUST be supported.
 
-     As with all floating point numbers, NaNs with payloads MUST be reduced to the shortest of double, single or half precision that preserves the NaN payload.
-     The reduction is performed by removing the rightmost N bits of the payload, where N is the difference in the number of bits in the significand (mantissa) between the original format and the
-     reduced format.
-     The reduction is performed only (preserves the value only) if all the rightmost bits removed are zero.
+     As with all floating-point values, NaNs MUST be reduced to the shortest format &mdash; double, single, or half precision &mdash; that fully preserves the NaN, including its payload.
+     Reduction is performed by removing the rightmost N bits of the significand, where N is the difference in significand width between the original and reduced formats.
+     This reduction MUST occur only if all removed bits are zero.
+     Aside from this allowed reduction, NaNs MUST be transported without modification.
+     There MUST NOT be any conversion between quiet and signaling NaNs.
 
 1. If big numbers (tags 2 and 3) are supported, the Preferred Serialization requirements decribed in {{bignum}} MUST be implemented.
 
