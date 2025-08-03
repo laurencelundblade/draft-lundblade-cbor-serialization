@@ -120,6 +120,7 @@ As mentioned in {{Introduction}} there is one change relative to the definition 
      This reduction MUST occur only if all removed bits are zero.
      Aside from this allowed reduction, NaNs MUST be transported without modification.
      There MUST NOT be any conversion between quiet and signaling NaNs.
+     The sign bit must be preserved.
 
 1. If big numbers (tags 2 and 3) are supported, the Preferred Serialization requirements decribed in {{bignum}} MUST be implemented.
 
