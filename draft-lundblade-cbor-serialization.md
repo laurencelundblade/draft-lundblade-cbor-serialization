@@ -87,7 +87,7 @@ This approach provides clarity and simplicity for implementers and the CBOR comm
 The serializations defined herein are formally new, but largely interchangeable with the way the serializations desecribed in {{-cbor}} are implemented.
 
 For example, preferred serialization described in {{-cbor}} is commonly implemented without support for indefinite-lengths.
-Ordinary serialization is defined here is largely the same preferred serialization without preferred serialization, so it is largely interchangeable with what is commonly implemented.
+Ordinary serialization is defined here is largely the same preferred serialization without indefinite-lengths, so it is largely interchangeable with what is commonly implemented.
 
 
 # General Serialization
@@ -106,7 +106,7 @@ A decoder that supports general serialization is able to decode all of these.
 
 If a CBOR-based protocol specification does not explicitly specify serialization, general serialization is implied.
 This means that a compliant decoder for such a protocol is required to accept all forms allowed by general serialization including both definite and indefinite lengths.
-For example, {{-CWT}} does not specify serialization; therefore, a full and proper CWT decoder must be able to handle variable-length CBOR argments plus indefinite-length strings, arrays and maps.
+For example, CBOR Web Token, {{-CWT}} does not specify serialization; therefore, a full and proper CWT decoder must be able to handle variable-length CBOR argments plus indefinite-length strings, arrays and maps.
 
 In practice, however, it is widely recognized that some CWT decoders cannot process the full range of general serialization, particularly indefinite lengths.
 As a result, CWT encoders typically limit themselves to the subset of serializations that decoders can reliably handle, most notably by never encoding indefinite lengths.
@@ -114,7 +114,7 @@ It is similar for other CBOR-based protocols like {{-COSE}}.
 See also {{OrdinarySerialization}}.
 
 Note also that there is no shortest-length requirement for floating-point encoding in general serialization.
-Thus, IEEE 754 NaNs (See {{NaN}}) may be encoded in any size, regardless of their payload &mdash; a principle sometimes stated as “touch not the NaNs.”
+Thus, IEEE 754 NaNs (See {{NaN}}) may be encoded with a desired size, regardless of their payload &mdash; a principle sometimes stated as “touch not the NaNs.”
 
 Finally, note also that general serialization is inherently non-deterministic because some CBOR data items can be serialized in multiple ways.
 
@@ -144,7 +144,7 @@ This section defines a serialization named "ordinary serialization."
       For example, 0.0 can always be reduced to half-precision so it MUST be encoded as 0xf90000
       For another example, 0.1 would loose precision if not encoded as double-precision so it MUST be encoded as 0xfb3fb999999999999a.
       Subnormal numbers MUST be supported in this shortest-length encoding.
-   * The only NaN that may be encoded is a half-precision quiet NaN (the sign bit and all payload bits clear), specifically 0xf97e00.
+   * The only NaN that may be encoded is a half-precision quiet NaN (the sign bit and all but the highest payload bit is clear), specifically 0xf97e00.
    * Aside from the the requirement allowing only the half-precision quiet NaN, these are the same floating-point requirements as {{Section 4.1 of -cbor}} and also as {{Section 4.2.1 of -cbor}}.
 
 1. If big numbers (tags 2 and 3) are encoded, the following apply:
@@ -218,7 +218,7 @@ Indefinite lengths, particularly for strings, are often not supported because th
 Because of this, the implementation of most CBOR protocols use only definite lengths.
 
 Further, much of the CBOR community didn't notice the use of the word "preference" and realize its implications for decoder implementations.
-It was somewhat assumed that preferred serialization didn't allows indefinite lengths.
+It was somewhat assumed that preferred serialization didn't allow indefinite lengths.
 That preferred serialization decoders are technically required to support indefinite lengths wasn't noticed until many years after the publication of {{-cbor}}.
 
 Briefly stated, the reason that the divergence on NaNs is not of consequence in the real world, is that their non-trivial forms are used extremely rarely and support for them in programming environments and CBOR libraries is unreliable.
@@ -234,9 +234,8 @@ This section defines a serialization named "deterministic serialization"
 Deterministic serialization is the same as described in {{Section 4.2.1 of -cbor}} except for the encoding of floating-point NaNs.
 See {{OrdinarySerialization}} and {{NaN}} for details on and rationale for NaN encoding.
 
-Note that {{Section 4.2.1 of -cbor}} does not mention big numbers.
-It should have.
-They are required indirectly by {{Section 4.2.1 of -cbor}} through the mention of preferred serialization.
+Note that in deterministic serialization, any big number that can be represented as an integer must be encoded as an integer.
+This rule is inherited from ordinary serialization ({{OrdinarySerialization}}), just as {{Section 4.2.1 of -cbor}} inherits this requirement from preferred serialization.
 
 
 ## Encoder Requirements {#DeterministicEncoding}
@@ -253,8 +252,8 @@ That is, deterministic encoding imposes no requirements over and above the requi
 
 ## When to use Deterministic Serialization {#WhenDeterministic}
 
-Most applications do not require deterministic encoding &mdash; even those that use signing or hashing to authenticate or protect the integrity of data.
-For example, the payload of a COSE_Sign message (See {{-COSE}}) does not need to be encoded deterministically, because it is transmitted along with the message.
+Most applications do not require deterministic encoding &mdash; even those that employ signing or hashing to authenticate or protect the integrity of data.
+For example, the payload of a COSE_Sign message (See {{-COSE}}) does not need to be encoded deterministically because it is transmitted along with the message.
 The recipient receives the exact same bytes that were signed.
 
 Deterministic encoding is required when the data being protected is NOT transmitted in the form needed for authenticity or integrity checks.
@@ -325,14 +324,14 @@ This is the section that covers what is know as ALDR in some discussions.
 In addition to {{DeterministicSerialization}} and {{Tags}}, there are considerations in the design of any deterministic protocol.
 
 For a protocol to be deterministic, both the encoding (serialization) and data model (application) layer must be deterministic.
-While CDER ensures determinism at the encoding layer, requirements at the application layer may also be necessary.
+While deterministic serialization, {{DeterministicSerialization}}, ensures determinism at the encoding layer, requirements at the application layer may also be necessary.
 
 Here’s an example application layer specification:
 
 >> At the sender’s convenience, the birth date MAY be sent either as an integer epoch date or string date. The receiver MUST decode both formats.
 
 While this specification is interoperable, it lacks determinism.
-There is variability in the data model layer akin to variability in the CBOR encoding layer when CDER is not required.
+There is variability in the data model layer akin to variability in the CBOR encoding layer when deterministic serialization is not required.
 
 To make this example application layer specification deterministic, specify one date format and prohibit the other.
 
@@ -341,7 +340,7 @@ Most protocols designs will just specify one number type to use, and that will g
 
 >> At the sender’s convenience, the fluid level measurement MAY be encoded as an integer or a floating-point number. This allows for minimal encoding size while supporting a large range. The receiver MUST be able to accept both integers and floating-point numbers for the measurement.
 
-Again, this ensures interoperability but not determinism—identical fluid level measurements can be represented in more than one way.
+Again, this ensures interoperability but not determinism &mdash; identical fluid level measurements can be represented in more than one way.
 Determinism can be achieved by allowing only floating-point, though that doesn’t minimize encoding size.
 
 A better solution requires the fluid level always be encoded using the smallest representation for every particular value.
@@ -470,8 +469,8 @@ This document diverges from that interpretation:
 The divergence is justified by the following:
 
 - Non-trivial NaNs were not clearly specified in {{-cbor}}.
-- They are not well supported across CPUs and programming environments.
-- Implementing preferred serialization for non-trivial NaNs is complex and error-prone; many CBOR implementations don't support them or don't support them correctly.
+- They are not well-supported across CPUs and programming environments.
+- Implementing preferred serialization for non-trivial NaNs is complex and error-prone; many CBOR implementations don't support it or don't support it correctly.
 - Practical use cases for non-trivial NaNs are extremely rare.
 - Reducing non-trivial NaNs to a half-precision quiet NaN is simple and widely supported (e.g., `isnan()` can be used to detect all NaNs).
 - Non-trivial NaNs remain supported by general serialization; the divergence is only for ordinary and deterministic serialization.
