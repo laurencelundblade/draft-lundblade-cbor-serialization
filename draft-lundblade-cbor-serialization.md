@@ -62,6 +62,14 @@ informative:
 
    RFC7049:
 
+   NaNBoxing:
+     title: Crafting Interpreters
+     author:
+      -
+        fullname: Robert Nystrom
+     date: July, 2021
+     target: https://craftinginterpreters.com/optimization.html#nan-boxing
+
 
 
 --- abstract
@@ -402,7 +410,7 @@ Although IEEE 754 intended NaN primarily for local computation, NaN values are s
 
 An IEEE 754 NaN includes a payload of up to 52 bits (depending on precision), whose use is not formally defined.
 The original intent was for vendor-specific diagnostic information explaining why a computation failed.
-NaN values also include an otherwise unused sign bit.
+NaN values also include an unused sign bit.
 
 IEEE 754 distinguishes between quiet NaNs (qNaNs) and signaling NaNs (sNaNs):
 
@@ -428,8 +436,8 @@ Some key points:
 
 - Programming languages:
 
-  - The C standard does not define primitives to set or extract NaN payloads.
-  - Even modern C versions only provide the `isnan()` function to test if a value is a NaN.
+  - The programming languages C, C++, Java, Pyhton and Rust do no provide APIs to set or extract NaN payloads.
+  - IEEE 754 is over thirty years old, enough time for support to be added if there was need.
 
 - CPU hardware:
 
@@ -443,7 +451,7 @@ Instead, they usually need their own software implementation of IEEE 754 to enco
 
 ## Protocol Use and Non-use for Non-Trivial NaNs
 
-One motivation for transmitting NaNs in CBOR is the technique known as NaN boxing TODO-REF, used in some language runtimes (e.g., JavaScript engines) to represent multiple data types efficiently within a single 64-bit word.
+One motivation for transmitting NaNs in CBOR is the technique known as NaN boxing (See {{NaNBoxing}}), used in some language runtimes (e.g., JavaScript engines) to represent multiple data types efficiently within a single 64-bit word.
 Another motivation arises when applications that internally rely on NaNs are split across a protocol boundary.
 For example, the R programming language uses non-trivial NaNs internally.
 
