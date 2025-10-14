@@ -264,10 +264,11 @@ Most applications do not require deterministic encoding &mdash; even those that 
 For example, the payload of a COSE_Sign message (See {{-COSE}}) does not need to be encoded deterministically because it is transmitted along with the message.
 The recipient receives the exact same bytes that were signed.
 
-Deterministic encoding is required when the data being protected is NOT transmitted in the form needed for authenticity or integrity checks.
-That is, the actual bytes that are checked have to be constructed independently by both the sender and the receiver.
-The two independent constructions must produce exactly the same actual bytes, so there can be no variability or ambiguity in the encoding.
-This is used in a protocol design for reasons such as reducing data size, addressing privacy concerns, or other constraints.
+Deterministic encoding becomes necessary only when the protected data is not transmitted as the exact bytes that are used for authenticity or integrity verification.
+In such cases, both the sender and the receiver must independently construct the exact same sequence of bytes.
+To guarantee this, the encoding must eliminate all variability and ambiguity.
+The Sig_structure, defined in {{Section 4.4 of -COSE}}, is an example of this requirement.
+Such designs are often chosen to reduce data size, preserve privacy, or meet other design constraints.
 
 The only difference between ordinary and deterministic serialization is map key sorting.
 Sorting can be expensive in very constrained environments.
