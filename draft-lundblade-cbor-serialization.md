@@ -121,10 +121,28 @@ As a result, CWT encoders typically limit themselves to the subset of serializat
 It is similar for other CBOR-based protocols like {{-COSE}}.
 See also {{OrdinarySerialization}}.
 
-Note also that there is no shortest-length requirement for floating-point encoding in general serialization.
-Thus, IEEE 754 NaNs (See {{NaN}}) may be encoded with a desired size, regardless of their payload &mdash; a principle sometimes stated as “touch not the NaNs.”
+Note also that general serialization is inherently non-deterministic because some CBOR data items can be serialized in multiple ways.
 
-Finally, note also that general serialization is inherently non-deterministic because some CBOR data items can be serialized in multiple ways.
+## NaN Equivalence
+
+{{Section 2 of -cbor}} states that the length of an encoded item mdash; the number of bytes used mdahs; is not significant in the data model.
+It explicitly applies this principle to floating-point values.
+While value equivalence for floating-point numbers is well-defined (e.g., a single-precision 1.0 is equivalent to a double-precision 1.0), there is no corresponding definition of equivalence for NaN values.
+In particular, {{IEEE754}} does not specify any notion of NaN equivalence.
+This omission represents a gap in {{Section 2 of -cbor}}, where such an equivalence should have been defined or referenced.
+
+A shorter NaN value (e.g., half-precision or single-precision) is considered equivalent to a longer NaN value (e.g., single-precision or double-precision) when the following conditions are met:
+
+* The sign bits of the two NaNs are identical.
+* The significand bits are identical when the shorter NaN’s significand is right-padded with zeros to match the length of the longer NaN’s significand.
+
+For example, the following NaNs are equivalent:
+
+* 0x7f05, half-precision, payload: 0x3705
+* 0x7fe0a000, single-precision, payload: 0x6e0a000
+* 0x7ffc140000000000, double precision, payload: 0xdc140000000000
+
+Please see {{NaN}} for background information on NaNs.
 
 
 # Ordinary Serialization {#OrdinarySerialization}
@@ -481,7 +499,6 @@ The divergence is justified by the following:
 - Implementing preferred serialization for non-trivial NaNs is complex and error-prone; many CBOR implementations don't support it or don't support it correctly.
 - Practical use cases for non-trivial NaNs are extremely rare.
 - Reducing non-trivial NaNs to a half-precision quiet NaN is simple and widely supported (e.g., `isnan()` can be used to detect all NaNs).
-- Non-trivial NaNs remain supported by general serialization; the divergence is only for ordinary and deterministic serialization.
 - A new CBOR tag could be defined in the future to explicitly support them if needed.
 
 ## Recommendations for Use of Non-Trival NaNs in CBOR
