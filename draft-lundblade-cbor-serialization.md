@@ -183,6 +183,13 @@ This section defines a serialization named "ordinary serialization."
    * An empty string SHOULD be accepted and treated as the value zero.
 
 
+## Data Model {#OrdinaryDataModel}
+
+The data model for ordinary serialization is as specified in {{Section 2 of -cbor}} with one change.
+The big number tag is no longer separate from the integer major types.
+A protocol design cannot make use of the distinction between big numbers and integers.
+
+
 ## When to use ordinary serialization
 
 The purpose of ordinary serialization is to provide interoperability without requiring support for indefinite-length decoding.
@@ -257,6 +264,12 @@ This rule is inherited from ordinary serialization ({{OrdinarySerialization}}), 
 
 1. Decoders MUST meet the decoder requirements for {{OrdinaryDecoding}}.
 That is, deterministic encoding imposes no requirements over and above the requirements for decoding ordinary serialization.
+
+
+## Data Model
+
+Since deterministic serialization inherits from ordinary serialization, its data model, {{OrdinaryDataModel}} applies to deterministic serialization.
+
 
 ## When to use Deterministic Serialization {#WhenDeterministic}
 
